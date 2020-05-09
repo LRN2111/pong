@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Pong</title>
+    <style>
+        html {
+            background-color: black;
+        }
+
+        body {
+            font-family: Verdana, sans-serif;
+            color: white;
+            background: black;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+        }
+        
+        div {
+            text-align: center;
+            width: 50%;
+        }
+        
+        #player1 {
+            float: left;
+        }
+        #player2 {
+            float: right;
+        }
+        
+        canvas {
+            border-top: white 1px solid;
+            border-bottom: white 1px solid;
+        }
+
+        :focus {
+            outline: none;
+        }
+
+        button {
+            padding: 10px;
+            font-size: 16px;
+            font-family: inherit;
+            border-radius: 8px;
+            background: white;
+            transition-duration: 0.3s;
+            margin: 5px;
+        }
+
+        button:hover {
+            border: blue 2px solid;
+        }
+
+        #darktheme {
+            background-color: rgb(0, 0, 0);
+            color: white;
+            float: right;
+        }
+
+        #grasstheme {
+            background-color: rgb(105, 211, 0);
+            float: right;
+        }
+
+        #claytheme {
+            background-color: rgb(199, 97, 51);
+            float: right;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Pong</h1>
+    <button id="startgamebtn">START GAME</button>
+    <button id="resetbtn">Reset</button>
+    <button id="darktheme">Dark theme</button>
+    <button id="grasstheme">Grass theme</button>
+    <button id="claytheme">Clay theme</button>
+    <p align="center">
+        <canvas id="mycanvas"></canvas>
+    </p>
+    <div id="player1">
+        <h3>Player 1</h3>
+        <p>"w" key for UP<br>"s" key for DOWN</p>
+    </div>
+    <div id="player2">
+        <h3>Player 2</h3>
+        <p>Up arrow key for UP<br>Down arrow key for DOWN</p>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/processing.js/1.4.8/processing.min.js"></script>
+
+    <script>
+        var playProc = function(processingInstance) {
+            with(processingInstance) {
+                // Create frame
+                var WIDTH = 600;
+                var HEIGHT = 400;
+                size(WIDTH, HEIGHT);
+                frameRate(30);
+
+                // initialize variables
+                var paddle1_pos = HEIGHT / 2;
+                var paddle2_pos = HEIGHT / 2;
+                var PAD_WIDTH = 8;
+                var PAD_HEIGHT = 80;
+                var BALL_RADIUS = 20;
+                var HALF_PW = PAD_WIDTH / 2;
+                var HALF_PH = PAD_HEIGHT / 2;
+                var paddle1_vel = 0;
+                var paddle2_vel = 0;
+                var themeColour = color(0, 0, 0);
+                var ball_pos = [WIDTH / 2, HEIGHT / 2];
+                var ball_vel = [0, 0];
+                var score1 = 0;
+                var score2 = 0;
+
+                // create function for random integer between min (included) and max (excluded)
+                function getRndInteger(min, max) {
+                    return Math.floor(Math.random() * (max - min)) + min;
+                };
+
+                // initialize ball_pos and ball_vel for new ball in middle of table
+                // if direction is true, ball_vel is upper right, else it goes upper left
+                var spawnBall = function(direction) {
+                    ball_pos = [WIDTH / 2, HEIGHT / 2];
+                    if (direction) {
+                        ball_vel[0] = getRndInteger(2, 7);
+                        ball_vel[1] = -1 * getRndInteger(1, 5);
+                    } else {
+                        ball_vel[0] = -1 * getRndInteger(2, 7);
+                        ball_vel[1] = -1 * getRndInteger(1, 5);
+                    }
+                };
+
+                // new game function
+                var startGame = function() {
+                    // randomise startSide - value of 0 or 1 gives left or right
+                    var startSide = getRndInteger(0, 2);
+                    spawnBall(startSide);
+                };
+                
+                // reset game function
+                var resetGame = function() {
+                    score1 = 0;
+                    score2 = 0;
+                    paddle1_pos = HEIGHT / 2;
+                    paddle2_pos = HEIGHT / 2;
+                    paddle1_vel = 0;
+                    paddle1_vel = 0;
+                };
+                
+                // draw function
+                draw = function() {
+                    // draw table, mid-line and gutters
+
+                    background(themeColour);
+                    stroke(255, 255, 255);
+                    strokeWeight(1);
+                    line(WIDTH / 2, 0, WIDTH / 2, HEIGHT);
+                    line(PAD_WIDTH, 0, PAD_WIDTH, HEIGHT);
+                    line(WIDTH - PAD_WIDTH, 0, WIDTH - PAD_WIDTH, HEIGHT);
+
+                    // draw ball
+                    ellipse(ball_pos[0], ball_pos[1], BALL_RADIUS * 2, BALL_RADIUS * 2);
+
+                    // draw paddles
+                    strokeWeight(PAD_WIDTH);
+                    strokeCap(SQUARE);
+                    line(HALF_PW, (paddle1_pos + HALF_PH), HALF_PW, (paddle1_pos - HALF_PH));
+                    line(WIDTH - HALF_PW, (paddle2_pos + HALF_PH), WIDTH - HALF_PW, (paddle2_pos - HALF_PH));
+
+                    // function for users moving paddles 1 and 2
+                    keyPressed = function() {
+                        if (keyCode === UP) {
+                            paddle2_vel = -5;
+                        } else if (keyCode === DOWN) {
+                            paddle2_vel = 5;
+                        };
+                        if (keyCode == 87) {
+                            paddle1_vel = -5;
+                        } else if (keyCode == 83) {
+                            paddle1_vel = 5;
+                        }
+                    };
+                    keyReleased = function() {
+                        if ((keyCode === UP) || (keyCode === DOWN)) {
+                            paddle2_vel = 0;
+                        };
+                        if ((keyCode == 87) || (keyCode == 83)) {
+                            paddle1_vel = 0;
+                        }
+                    };
+
+                    // update paddles' vertical positions, keep paddles on screen
+                    paddle1_pos += paddle1_vel;
+                    if (paddle1_pos - HALF_PH < 0) {
+                        paddle1_pos = HALF_PH;
+                    };
+                    if (paddle1_pos + HALF_PH > HEIGHT - 1) {
+                        paddle1_pos = HEIGHT - 1 - HALF_PH;
+                    };
+
+                    paddle2_pos += paddle2_vel;
+                    if (paddle2_pos - HALF_PH < 0) {
+                        paddle2_pos = HALF_PH;
+                    };
+                    if (paddle2_pos + HALF_PH > HEIGHT - 1) {
+                        paddle2_pos = HEIGHT - 1 - HALF_PH;
+                    };
+
+                    // update ball position
+                    // condition for bouncing off top or bottom wall:
+                    if ((ball_pos[1] <= BALL_RADIUS) || (ball_pos[1] >= HEIGHT - 1 - BALL_RADIUS)) {
+                        ball_vel[1] *= -1;
+                    };
+                    // condition for whether ball collides with paddle 1 or whether player 2 scores
+                    if (ball_pos[0] <= BALL_RADIUS + PAD_WIDTH) {
+                        if ((ball_pos[1] > paddle1_pos - HALF_PH) && (ball_pos[1] < paddle1_pos + HALF_PH)) {
+                            ball_vel[0] *= -1.1;
+                            ball_vel[1] *= 1.1;
+                        } else {
+                            score2++;
+                            spawnBall(true);
+                        }
+                    };
+                    // condition for whether ball collides with paddle 2 or whether player 1 scores
+                    if (ball_pos[0] >= (WIDTH - 1) - PAD_WIDTH - BALL_RADIUS) {
+                        if ((ball_pos[1] > paddle2_pos - HALF_PH) && (ball_pos[1]) < paddle2_pos + HALF_PH) {
+                            ball_vel[0] *= -1.1;
+                            ball_vel[1] *= 1.1;
+                        } else {
+                            score1++;
+                            spawnBall(false);
+                        }
+                    };
+                    ball_pos[0] += ball_vel[0];
+                    ball_pos[1] += ball_vel[1];
+
+                    // draw scores
+                    textSize(40);
+                    text(score1, 250, 50);
+                    text(score2, 330, 50);
+                    
+                };
+                        
+                // button variables
+                var startGamebtn = document.getElementById("startgamebtn");
+                var resetbtn = document.getElementById("resetbtn");
+                var claybtn = document.getElementById("claytheme");
+                var grassbtn = document.getElementById("grasstheme");
+                var darkbtn = document.getElementById("darktheme");
+                
+                // add event listeners to buttons
+                startGamebtn.addEventListener("click", startGame);
+                resetbtn.addEventListener("click", resetGame);
+                claybtn.addEventListener("click", function() {themeColour = color(199, 97, 51)});
+                grassbtn.addEventListener("click", function() {themeColour = color(105, 211, 0)});
+                darkbtn.addEventListener("click", function() {themeColour = color(0, 0, 0)});
+
+            };
+
+        };
+
+        // Get canvas
+        var canvas = document.getElementById("mycanvas");
+        var processingInstance = new Processing(canvas, playProc);
+    </script>
+</body></html>
